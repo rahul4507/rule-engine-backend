@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import authentication
-from ..models import User
+from app.users.models.user import User
 
 class JWTAuthenticationMiddleware(MiddlewareMixin):
     authentication_header_prefix = "Bearer"

@@ -3,10 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from django.conf import settings
-from ..models import User
+from users.models.user import User
 from rest_framework.permissions import IsAuthenticated
-import jwt
 
 
 class LoginView(APIView):

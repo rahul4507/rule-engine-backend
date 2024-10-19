@@ -148,11 +148,7 @@ MIDDLEWARE = [
     "users.utils.request_log.RequestLogMiddleware",
 ]
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "users.utils.jwt_utils.JWTAuthenticationMiddleware",
-    )
-}
+
 # STATIC
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
