@@ -1,84 +1,54 @@
-from django.contrib.auth.hashers import make_password
-from rest_framework.views import APIView
-from rest_framework.response import Response
+# views.py
 from rest_framework import status
-from django.contrib.auth import authenticate
-from users.models.user import User
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from ..models.user import User
+from ..serializers.user import UserSerializer
 
 
-class LoginView(APIView):
+class UserRegisterAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserLoginAPIView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        user = authenticate(email=email, password=password)
-        if user:
-            token = user.token
-            user.jwt_token = token
-            user.update_last_active()
-            return Response({"token": token}, status=status.HTTP_200_OK)
+        user = User.objects.filter(email=email).first()
+        if user and user.check_password(password):
+            refresh = RefreshToken.for_user(user)
+            return Response(
+        {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+            },
+            status=status.HTTP_200_OK)
+
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class LogoutAPIView(APIView):
     def post(self, request):
         try:
-            user = request.user
-            user.jwt_token = None
-            user.save()
-            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+            # Blacklist the access and refresh token
+            token = request.data.get('refresh')
+            token_obj = RefreshToken(token)
+            token_obj.blacklist()
+            return Response({"msg": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response(
-                {"message": "Invalid authentication. Could not decode token."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-
-class UserAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response({
-            "email": user.email,
-            "username": user.username,
-            "name": user.name,
-            "last_active": user.last_active
-        }, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        data = request.data
-
-        # Extract user data from the request
-        email = data.get('email')
-        username = data.get('username')
-        password = data.get('password')
-        name = data.get('name')
-
-        # Check if email and username are unique
-        if User.objects.filter(email=email).exists():
-            return Response({"error": "Email already in use."}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "Username already taken."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Create a new user
-        user = User.objects.create(
-            email=email,
-            username=username,
-            name=name,
-            password=make_password(password)  # Hash the password
-        )
-
-        user.save()
-
-        # Optionally return a JWT token upon successful registration
-        token = user.token
-
-        return Response({
-            "message": "User registered successfully",
-            "token": token
-        }, status=status.HTTP_201_CREATED)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

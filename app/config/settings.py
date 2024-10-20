@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import logging
+from datetime import timedelta
 from pathlib import Path
 import environ
 from logtail import LogtailHandler
@@ -123,12 +124,13 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
+    "users",
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
-LOCAL_APPS = ["users"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS  + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS
 
 # MIDDLEWARE
 # ------------------------------------------------------------------------------
@@ -165,7 +167,7 @@ MANAGERS = ADMINS
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "email"
 
 # ------------------------------------------------------------------------------
-
+AUTH_USER_MODEL = 'users.User'
 AUTH_LOGGER = "auth_service_logs"
 
 
@@ -203,4 +205,17 @@ LOGGING = {
             "level": "INFO",
         },
     },
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+# JWT settings
+JWT_AUTH = {
+    'JWT_SECRET_KEY': SECRET_KEY,
+    'JWT_ALGORITHM': 'HS256',
+    'JWT_TOKEN_LIFETIME': timedelta(minutes=60),  # Change the token lifetime as needed
 }

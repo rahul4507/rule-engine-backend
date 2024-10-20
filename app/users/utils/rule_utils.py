@@ -10,7 +10,7 @@ class ExpressionTree:
         self.priority = {
             '(': 1,
             'AND': 2,
-            'OR': 2,
+            'OR': 3,
             '<': 3,
             '>': 3,
             '>=': 3,
@@ -92,62 +92,3 @@ class ExpressionTree:
 
         stack.append(root)
 
-    def get_tree_json(self):
-        """Return the tree as a JSON object."""
-        tree = self.build_tree()
-        return json.dumps(tree, indent=4)
-
-    def combine_rules(rules):
-        combined_tree = None
-        combined_tokens = []
-
-        # Step 1: Tokenize each rule and build individual ASTs
-        for rule in rules:
-            tokens = re.findall(r"\w+|[><=()]|'.+?'|AND|OR", rule)
-            builder = ExpressionTree(rule)
-            ast = builder.expTree(tokens)
-            combined_tokens.append(ast)
-
-        # Step 2: Combine the individual ASTs into a single AST
-        if combined_tokens:
-            # A heuristic could be to always combine using the main logical operator
-            # Here, we assume we are combining using 'OR' as an example
-            combined_tree = {
-                "val": "OR",
-                "left": combined_tokens[0],
-                "right": combined_tokens[1] if len(combined_tokens) > 1 else None
-            }
-
-            # Combine remaining ASTs
-            for i in range(2, len(combined_tokens)):
-                combined_tree = {
-                    "val": "OR",
-                    "left": combined_tree,
-                    "right": combined_tokens[i]
-                }
-
-        return combined_tree
-
-    def combine_rules_based_on_most_frequent_op(self, rules: list) -> dict:
-        """Combine a list of rule strings into a single AST based on the most frequent operator."""
-        operator_count = Counter()
-
-        # Count operators in all rules
-        for rule in rules:
-            tokens = re.findall(r"\w+|[><=()]|'.+?'|AND|OR", rule)
-            for token in tokens:
-                if token in self.priority:
-                    operator_count[token] += 1
-
-        # Determine the most frequent operator
-        most_common_operator = operator_count.most_common(1)[0][0] if operator_count else None
-
-        # Build combined rule string
-        combined_rule = f" {' '.join(['(' + rule + ')' for rule in rules])} "  # Wrap each rule in parentheses
-        combined_rule = combined_rule.replace(") (", f") {most_common_operator} (")  # Add the most common operator
-
-        # Tokenize the combined rule
-        combined_tokens = re.findall(r"\w+|[><=()]|'.+?'|AND|OR", combined_rule)
-
-        # Create a new expression tree
-        return self.expTree(combined_tokens)

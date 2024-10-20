@@ -1,8 +1,10 @@
 from rest_framework import serializers
-from users.models.rule import Rule
+from ..models import Rule
 
 
 class RuleSerializer(serializers.ModelSerializer):
+    ast = serializers.ReadOnlyField()
+
     class Meta:
         model = Rule
         fields = ['id', 'rule_string', 'ast']
