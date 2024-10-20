@@ -1,24 +1,21 @@
-from django.urls import path
-
-from .views.employee import EmployeeAPIView, EmployeeDetailAPIView, EmployeeEvaluateAPIView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views.employee import  EmployeeEvaluateAPIView, EmployeeViewSet
 from .views.health import HealthCheckAPIView
 from .views.user import UserLoginAPIView, LogoutAPIView, UserRegisterAPIView
-from .views.rules import RuleAPIView, CombineRulesAPIView
-from .views.rules import RuleDetailView, RuleListView
+from .views.rules import RuleViewSet, CombineRulesAPIView
 
 app_name = "users"
+router = DefaultRouter()
+router.register(r'rules', RuleViewSet, basename='rule')
+router.register(r'employees', EmployeeViewSet, basename='employee')
 
 urlpatterns = [
     path('health/', HealthCheckAPIView.as_view()),
     path('register/', UserRegisterAPIView.as_view()),
     path('login/', UserLoginAPIView.as_view()),
     path('logout/', LogoutAPIView.as_view()),
-    path('rules/', RuleAPIView.as_view()),
-    path('rules/<int:pk>/', RuleDetailView.as_view()),
-    path('rules/list/', RuleListView.as_view()),
     path('rules/combine/', CombineRulesAPIView.as_view()),
-    path('employees/', EmployeeAPIView.as_view()),
-    path('employees/<int:pk>/', EmployeeAPIView.as_view()),
-    path('employees/detail/<int:pk>/', EmployeeDetailAPIView.as_view()),
-    path('employees/<int:pk>/evaluate/', EmployeeEvaluateAPIView.as_view())
+    path('employees/<int:pk>/evaluate/', EmployeeEvaluateAPIView.as_view()),
+    path('', include(router.urls)),
 ]

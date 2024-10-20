@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from ..models import Employee
-from ..utils.choices import DepartmentType
+from ..models import Employee, DepartmentType
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
     department = serializers.ChoiceField(choices=DepartmentType.choices)

@@ -63,7 +63,7 @@ TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
 LANGUAGE_CODE = "en-us"
 # https://docs.djangoproject.com/en/dev/ref/settings/#languages
-# from django.utils.translation import gettext_lazy as _
+# from django.core.translation import gettext_lazy as _
 # LANGUAGES = [
 #     ('en', _('English')),
 #     ('pt-br', _('Português')),
@@ -147,7 +147,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_user_agents.middleware.UserAgentMiddleware",
     "rollbar.contrib.django.middleware.RollbarNotifierMiddleware",
-    "users.utils.request_log.RequestLogMiddleware",
+    "users.middlewares.request_log.RequestLogMiddleware",
 ]
 
 
@@ -212,6 +212,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'page_size':10,
 }
 
 SIMPLE_JWT = {

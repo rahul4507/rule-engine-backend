@@ -1,5 +1,11 @@
 from django.db import models
-from ..utils.choices import DepartmentType
+
+class DepartmentType(models.TextChoices):
+    SALES = 'Sales', 'Sales'
+    MARKETING = 'Marketing', 'Marketing'
+    HR = 'Human Resources', 'Human Resources'
+    IT = 'Information Technology', 'Information Technology'
+    FINANCE = 'Finance', 'Finance'
 
 
 class Employee(models.Model):

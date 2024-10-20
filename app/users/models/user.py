@@ -46,30 +46,9 @@ class User(AbstractBaseUser):
     def get_by_natural_key(self, email):
         return self.get(email__iexact=email)
 
-    @property
-    def token(self):
-        return self._generate_jwt_token()
-
     def get_full_name(self):
         return self.name
 
     def get_short_name(self):
         return self.username
 
-    def _generate_jwt_token(self):
-        # fixme : configure jwt expiry
-        dt = datetime.utcnow() + timedelta(minutes=settings.JWT_TOKEN_EXPIRY_MINUTES)
-
-        token = jwt.encode(
-            {"id": self.pk, "exp": int(dt.timestamp())},
-            settings.SECRET_KEY,
-            algorithm="HS256",
-        )
-
-        return token
-
-    def update_last_active(self):
-        today = datetime.today().date()
-        if self.last_active is None or self.last_active < today:
-            self.last_active = today
-            self.save()

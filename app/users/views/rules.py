@@ -1,75 +1,37 @@
 # views.py
-from rest_framework import status
+from rest_framework import status, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from ..models.rule import Rule
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics
 from ..serializers.rule import RuleSerializer
-from ..utils.rule_utils import ExpressionTree
+from core.rule import ExpressionTree
 
-
-class RuleAPIView(APIView):
+class RuleViewSet(viewsets.ModelViewSet):
+    queryset = Rule.objects.all().order_by('-created_date')
+    serializer_class = RuleSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
 
-    def get_object(self, pk):
-        try:
-            return Rule.objects.get(pk=pk)
-        except Rule.DoesNotExist:
-            return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    def post(self, request):
-        data  = request.data.copy()
-        ast = ExpressionTree(data.get('rule_string')).build_tree()
-        data['ast'] = ast
-        serializer = RuleSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"result":serializer.data}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk):
-        rule = self.get_object(pk)
-        if not rule:
-            return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
+    def create(self, request, *args, **kwargs):
         data = request.data.copy()
         ast = ExpressionTree(data.get('rule_string')).build_tree()
         data['ast'] = ast
-        serializer = RuleSerializer(rule, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"result":serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"result": serializer.data}, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, pk):
-        rule = self.get_object(pk)
-        if not rule:
-            return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
-        rule.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class RuleListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = Rule.objects.all()
-    serializer_class = RuleSerializer
-
-
-class RuleDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self, pk):
-        try:
-            return Rule.objects.get(pk=pk)
-        except Rule.DoesNotExist:
-            return None
-
-    def get(self, request, pk):
-        rule = self.get_object(pk)
-        if rule:
-            serializer = RuleSerializer(rule)
-            return Response({"result":serializer.data}, status=status.HTTP_200_OK)
-        return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
+    def update(self, request, *args, **kwargs):
+        rule = self.get_object()
+        data = request.data.copy()
+        ast = ExpressionTree(data.get('rule_string')).build_tree()
+        data['ast'] = ast
+        serializer = self.get_serializer(rule, data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"result": serializer.data}, status=status.HTTP_200_OK)
 
 
 class CombineRulesAPIView(APIView):
