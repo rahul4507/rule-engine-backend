@@ -3,7 +3,6 @@ from ..models import Rule
 
 
 class RuleSerializer(serializers.ModelSerializer):
-    ast = serializers.ReadOnlyField()
 
     class Meta:
         model = Rule

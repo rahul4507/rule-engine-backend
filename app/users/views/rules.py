@@ -16,7 +16,7 @@ class RuleAPIView(APIView):
         try:
             return Rule.objects.get(pk=pk)
         except Rule.DoesNotExist:
-            return None
+            return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
         data  = request.data.copy()
@@ -75,7 +75,7 @@ class RuleDetailView(APIView):
 class CombineRulesAPIView(APIView):
     def post(self, request):
         try:
-            rule_ids = request.data.get('rule_ids', [])
+            rule_ids = request.data.get('rules', [])
 
             if not rule_ids:
                 return Response({"error": "No rule IDs provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -85,14 +85,15 @@ class CombineRulesAPIView(APIView):
             if len(rules) < 2:
                 return Response({"error": "You must provide at least two rules to combine."},
                                 status=status.HTTP_400_BAD_REQUEST)
-            combined_rule_string = ' AND '.join([rule.rule_string for rule in rules])
-            combined_ast = ExpressionTree(combined_rule_string)
-            combined_ast.combine_rules()
-
+            asts = [rule.ast for rule in rules]
+            combined_ast = ExpressionTree()
+            combined_ast.combine_multiple_asts(asts)
+            combined_rule_string = combined_ast.inorder()
+            combined_ast_dict = combined_ast.ast
             new_rule_name = "Combined Rule"
             data = {
                 "name": new_rule_name,
-                "ast": combined_ast,
+                "ast": combined_ast_dict,
                 "rule_string": combined_rule_string
             }
             serializer = RuleSerializer(data=data)
@@ -100,21 +101,7 @@ class CombineRulesAPIView(APIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Rule.DoesNotExist:
+            return Response({"error": "Rule not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def combine_asts(self, ast_dicts):
-        """
-        Combines the AST dictionaries into a single one by combining them using 'AND'.
-        Modify the operator to 'OR' if needed.
-        """
-        if len(ast_dicts) == 1:
-            return ast_dicts[0]  # If only one rule, return it directly
-
-        combined_ast = {
-            "val": "AND",  # Change to 'OR' if needed
-            "left": ast_dicts[0],  # First rule AST as the left child
-            "right": self.combine_asts(ast_dicts[1:])  # Recursively combine the rest of the ASTs
-        }
-
-        return combined_ast
