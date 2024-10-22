@@ -52,9 +52,13 @@ class CombineRulesAPIView(APIView):
             combined_ast.combine_multiple_asts(asts)
             combined_rule_string = combined_ast.inorder()
             combined_ast_dict = combined_ast.ast
-            new_rule_name = "Combined Rule"
+            new_rule_name = "Combined Rules"
+            for r in rules:
+                 new_rule_name = new_rule_name +f"-{r.name}"
+            description = "combined the rules."
             data = {
                 "name": new_rule_name,
+                "description":description,
                 "ast": combined_ast_dict,
                 "rule_string": combined_rule_string
             }

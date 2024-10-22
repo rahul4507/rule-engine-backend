@@ -9,6 +9,7 @@ class DepartmentType(models.TextChoices):
 
 
 class Employee(models.Model):
+    name = models.CharField(max_length=255)
     age = models.IntegerField()
     department = models.CharField(
         max_length=50,
@@ -23,4 +24,4 @@ class Employee(models.Model):
         db_table = "employee"
 
     def __str__(self):
-        return f"{self.department} Employee - Age: {self.age}"
+        return f"{self.name} Employee - Age: {self.age}"

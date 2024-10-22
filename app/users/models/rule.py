@@ -4,7 +4,7 @@ from django.utils.datetime_safe import datetime
 
 
 class Rule(models.Model):
-    name = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255)
     rule_string = models.TextField(unique=True, null=True, blank=True)
     ast = models.JSONField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
