@@ -1,6 +1,6 @@
 # Rule Engine using AST
 
-A Django REST Framework based backend service with JWT token authentication.
+A Django REST Framework based backend service with JWT token authentication, that provides end-to-end authorization intelligence using Abstract Syntax Trees (AST), offering a complete 360-degree approach to creating, managing, and evaluating complex business rules.
 
 ## Prerequisites
 
@@ -54,15 +54,25 @@ A Django REST Framework based backend service with JWT token authentication.
    DJANGO_SECRET_KEY=<your-secret-key-here>
    DATABASE_URL=postgresql://<db_user>:<db_password>@<db_host>:<db_port>/<your_db_name>
    DJANGO_READ_DOT_ENV_FILE=True
-   LOGGING_SERVICE_TOKEN=<your-logging-service-token>  # If using a logging service
+   LOGGING_SERVICE_TOKEN=<your-logging-service-token>  # If using a logging service (optional)
    ```
+   **Setting up Logtail (optional)**
+      - Create Better Stack Account
+      - Visit Better Stack Telemetry Sign up for a free account Verify your email address
 
-6. **Apply migrations**
+      - Create a Source
+      - After logging in, go to "Sources" in the dashboard
+      - Click "Add new source"
+      - Select "Django" as your source type
+      - Name your source (e.g., "Django Backend")
+      - Copy the provided source_token
+   
+7. **Apply migrations**
    ```bash
    python manage.py migrate
    ```
 
-7. **Create superuser (optional)**
+8. **Create superuser (optional)**
    ```bash
    python manage.py createsuperuser
    ```
