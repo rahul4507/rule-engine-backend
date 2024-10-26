@@ -1,6 +1,25 @@
 import re
 from collections import Counter
 
+class TreeBuildError(Exception):
+    """Custom exception for tree building errors"""
+    pass
+
+
+class UnmatchedParenthesesError(TreeBuildError):
+    """Exception for unmatched parentheses"""
+    pass
+
+
+class InvalidTokenError(TreeBuildError):
+    """Exception for invalid tokens"""
+    pass
+
+
+class EmptyExpressionError(TreeBuildError):
+    """Exception for empty expressions"""
+    pass
+
 class ExpressionTree:
     def __init__(self, rule_string=None, ast=None, data=None):
         """Initialize with the rule string."""
@@ -33,33 +52,109 @@ class ExpressionTree:
             self.tokens=[]
 
     def build_tree(self) -> dict:
-        """Build the expression tree as a nested dictionary."""
-        ops = []  # Stack for operators
-        stack = []  # Stack for nodes (operands and sub-trees represented as dicts)
+        """
+        Build the expression tree as a nested dictionary.
 
-        for token in self.tokens:
-            if token == '(':
-                ops.append(token)
-            elif token == ')':
-                # Pop and combine until '(' is found
-                while ops and ops[-1] != '(':
+        Returns:
+            dict: The root node of the expression tree
+
+        Raises:
+            EmptyExpressionError: If the expression is empty
+            UnmatchedParenthesesError: If parentheses are not properly matched
+            InvalidTokenError: If an invalid token is encountered
+            TreeBuildError: For other tree building errors
+        """
+        try:
+            if not self.tokens:
+                raise EmptyExpressionError("Cannot build tree from empty expression")
+
+            ops = []  # Stack for operators
+            stack = []  # Stack for nodes (operands and sub-trees represented as dicts)
+            paren_count = 0  # Track parentheses balance
+
+            for token in self.tokens:
+                try:
+                    if token == '(':
+                        ops.append(token)
+                        paren_count += 1
+                    elif token == ')':
+                        paren_count -= 1
+                        if paren_count < 0:
+                            raise UnmatchedParenthesesError("Unmatched closing parenthesis")
+
+                        # Pop and combine until '(' is found
+                        while ops:
+                            if ops[-1] == '(':
+                                break
+                            self.combine(ops, stack)
+                        else:
+                            raise UnmatchedParenthesesError("Missing opening parenthesis")
+
+                        ops.pop()  # Remove the '('
+                    elif token in self.priority:
+                        # Ensure operator precedence is respected
+                        while ops and ops[-1] != '(' and self.priority.get(ops[-1], 0) >= self.priority[token]:
+                            self.combine(ops, stack)
+                        ops.append(token)
+                    else:
+                        # Validate operand (you might want to add more specific validation)
+                        if not isinstance(token, (str, int, float)):
+                            raise InvalidTokenError(f"Invalid operand type: {type(token)}")
+
+                        # Treat any other token as an operand (number, variable, or string)
+                        stack.append({"val": token, "left": None, "right": None})
+
+                except (IndexError, KeyError) as e:
+                    raise TreeBuildError(f"Error processing token '{token}': {str(e)}")
+
+            # Check for unmatched opening parentheses
+            if paren_count > 0:
+                raise UnmatchedParenthesesError("Unmatched opening parenthesis")
+
+            # Combine remaining operators in the ops stack
+            try:
+                while ops:
+                    if ops[-1] == '(':
+                        raise UnmatchedParenthesesError("Unmatched opening parenthesis")
                     self.combine(ops, stack)
-                ops.pop()  # Remove the '('
-            elif token in self.priority:
-                # Ensure operator precedence is respected
-                while ops and self.priority.get(ops[-1], 0) >= self.priority[token]:
-                    self.combine(ops, stack)
-                ops.append(token)
-            else:
-                # Treat any other token as an operand (number, variable, or string)
-                stack.append({"val": token, "left": None, "right": None})
+            except IndexError as e:
+                raise TreeBuildError(f"Error combining remaining operators: {str(e)}")
 
-        # Combine remaining operators in the ops stack
-        while ops:
-            self.combine(ops, stack)
+            if not stack:
+                raise TreeBuildError("Expression evaluation resulted in empty stack")
+            if len(stack) > 1:
+                raise TreeBuildError("Invalid expression: multiple unconnected sub-trees")
 
-        self.ast = stack[0] if stack else None
-        return self.ast
+            self.ast = stack[0]
+            return self.ast
+
+        except TreeBuildError:
+            # Re-raise TreeBuildError and its subclasses
+            raise
+        except Exception as e:
+            # Catch any unexpected exceptions and wrap them
+            raise TreeBuildError(f"Unexpected error during tree building: {str(e)}") from e
+
+    def combine(self, ops: list, stack: list) -> None:
+        """
+        Helper method to combine operators and operands.
+        Now with additional error checking.
+        """
+        try:
+            if len(stack) < 2:
+                raise TreeBuildError("Not enough operands for operator")
+
+            op = ops.pop()
+            right = stack.pop()
+            left = stack.pop()
+
+            stack.append({
+                "val": op,
+                "left": left,
+                "right": right
+            })
+        except IndexError as e:
+            raise TreeBuildError(f"Error during node combination: {str(e)}")
 
     def combine(self, ops: list, stack: list) -> None:
         """Combine the top two nodes in the stack with the operator."""

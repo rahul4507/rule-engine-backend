@@ -7,6 +7,8 @@ from ..models.rule import Rule
 from rest_framework.permissions import IsAuthenticated
 from ..serializers.rule import RuleSerializer
 from core.rule import ExpressionTree
+from core.rule import UnmatchedParenthesesError, InvalidTokenError, EmptyExpressionError, TreeBuildError
+
 
 class RuleViewSet(viewsets.ModelViewSet):
     queryset = Rule.objects.all().order_by('-created_date')
@@ -15,24 +17,46 @@ class RuleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
 
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        ast = ExpressionTree(data.get('rule_string')).build_tree()
-        data['ast'] = ast
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response({"result": serializer.data}, status=status.HTTP_201_CREATED)
+        try:
+            data = request.data.copy()
+            ast = ExpressionTree(data.get('rule_string')).build_tree()
+            data['ast'] = ast
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response({"result": serializer.data}, status=status.HTTP_201_CREATED)
+        except UnmatchedParenthesesError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidTokenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except EmptyExpressionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except TreeBuildError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     def update(self, request, *args, **kwargs):
-        rule = self.get_object()
-        data = request.data.copy()
-        ast = ExpressionTree(data.get('rule_string')).build_tree()
-        data['ast'] = ast
-        serializer = self.get_serializer(rule, data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response({"result": serializer.data}, status=status.HTTP_200_OK)
-
+        try:
+            rule = self.get_object()
+            data = request.data.copy()
+            ast = ExpressionTree(data.get('rule_string')).build_tree()
+            data['ast'] = ast
+            serializer = self.get_serializer(rule, data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response({"result": serializer.data}, status=status.HTTP_200_OK)
+        except UnmatchedParenthesesError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidTokenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except EmptyExpressionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except TreeBuildError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CombineRulesAPIView(APIView):
     def post(self, request):
