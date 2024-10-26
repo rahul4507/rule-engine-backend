@@ -1,0 +1,10 @@
+Django~=4.2
+djangorestframework~=3.15.1
+djangorestframework-simplejwt~=5.2.2
+PyJWT~=2.8.0
+django-environ~=0.10.0
+logtail~=1.0.1  # Replace with your preferred logging service
+psycopg2-binary~=2.9.9
+django-cors-headers~=4.3.1
+django-user-agents~=0.4.0
+rollbar~=0.16.3
